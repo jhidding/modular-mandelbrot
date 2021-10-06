@@ -12,7 +12,7 @@ $$z_{n+1} = z_n^2 + c,$$
 
 converges, starting iteration at $z_0 = 0$. We can visualize the Mandelbrot set by plotting the number of iterations needed for the absolute value $|z_n|$ to exceed 2 (for which it can be shown that the iteration always diverges).
 
-![The whole Mandelbrot set](mandelbrot-all.png)
+![The whole Mandelbrot set](fig/mandelbrot-all.png)
 
 We may compute the Mandelbrot as follows:
 
