@@ -10,6 +10,8 @@ python = "3.9"
 matplotlib = "^3.4.3"
 numba = "^0.54.0"
 jupyterlab = "^3"
+ipywidgets = "^7.6.5"
+ipympl = "^0.8.0"
 
 [tool.poetry.dev-dependencies]
 
