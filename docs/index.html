@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="" xml:lang="">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <meta name="author" content="Johan Hidding" />
+  <title>Plotting the Mandelbrot set in Python</title>
+  <style>
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    span.underline{text-decoration: underline;}
+    div.column{display: inline-block; vertical-align: top; width: 50%;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    ul.task-list{list-style: none;}
+    pre > code.sourceCode { white-space: pre; position: relative; }
+    pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+    pre > code.sourceCode > span:empty { height: 1.2em; }
+    .sourceCode { overflow: visible; }
+    code.sourceCode > span { color: inherit; text-decoration: inherit; }
+    div.sourceCode { margin: 1em 0; }
+    pre.sourceCode { margin: 0; }
+    @media screen {
+    div.sourceCode { overflow: auto; }
+    }
+    @media print {
+    pre > code.sourceCode { white-space: pre-wrap; }
+    pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+    }
+    pre.numberSource code
+      { counter-reset: source-line 0; }
+    pre.numberSource code > span
+      { position: relative; left: -4em; counter-increment: source-line; }
+    pre.numberSource code > span > a:first-child::before
+      { content: counter(source-line);
+        position: relative; left: -1em; text-align: right; vertical-align: baseline;
+        border: none; display: inline-block;
+        -webkit-touch-callout: none; -webkit-user-select: none;
+        -khtml-user-select: none; -moz-user-select: none;
+        -ms-user-select: none; user-select: none;
+        padding: 0 4px; width: 4em;
+        color: #aaaaaa;
+      }
+    pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+    div.sourceCode
+      {   }
+    @media screen {
+    pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+    }
+    code span.al { color: #ff0000; font-weight: bold; } /* Alert */
+    code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+    code span.at { color: #7d9029; } /* Attribute */
+    code span.bn { color: #40a070; } /* BaseN */
+    code span.bu { } /* BuiltIn */
+    code span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+    code span.ch { color: #4070a0; } /* Char */
+    code span.cn { color: #880000; } /* Constant */
+    code span.co { color: #60a0b0; font-style: italic; } /* Comment */
+    code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+    code span.do { color: #ba2121; font-style: italic; } /* Documentation */
+    code span.dt { color: #902000; } /* DataType */
+    code span.dv { color: #40a070; } /* DecVal */
+    code span.er { color: #ff0000; font-weight: bold; } /* Error */
+    code span.ex { } /* Extension */
+    code span.fl { color: #40a070; } /* Float */
+    code span.fu { color: #06287e; } /* Function */
+    code span.im { } /* Import */
+    code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+    code span.kw { color: #007020; font-weight: bold; } /* Keyword */
+    code span.op { color: #666666; } /* Operator */
+    code span.ot { color: #007020; } /* Other */
+    code span.pp { color: #bc7a00; } /* Preprocessor */
+    code span.sc { color: #4070a0; } /* SpecialChar */
+    code span.ss { color: #bb6688; } /* SpecialString */
+    code span.st { color: #4070a0; } /* String */
+    code span.va { color: #19177c; } /* Variable */
+    code span.vs { color: #4070a0; } /* VerbatimString */
+    code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+  </style>
+  <link rel="stylesheet" href="theme.css" />
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
+  <!--[if lt IE 9]>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/html5shiv/3.7.3/html5shiv-printshiv.min.js"></script>
+  <![endif]-->
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">Plotting the Mandelbrot set in Python</h1>
+<p class="subtitle">an exercise in modular and parallel programming</p>
+<p class="author">Johan Hidding</p>
+</header>
+<div class="row">
+        <div class="col-6 col-s-9" id="main">
+<p><a href="https://entangled.github.io/"><img src="https://img.shields.io/badge/entangled-Use%20the%20source!-%2300aeff" alt="Entangled badge" /></a> <a href="https://github.com/jhidding/modular-mandelbrot/"><img src="https://img.shields.io/badge/github-clone%20me-%44ee55ff" alt="Github badge" /></a></p>
+<section id="exercise-in-modular-programming-the-mandelbrot-set" class="level1">
+<h1>Exercise in modular programming: the Mandelbrot set</h1>
+<p>This exercise uses Numpy, Matplotlib, Numba and Dask.</p>
+<div class="named-code-block">
+<p>«imports»</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> matplotlib <span class="im">import</span> pyplot <span class="im">as</span> plt</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numba</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> dask <span class="im">import</span> array <span class="im">as</span> da</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> dask <span class="im">import</span> delayed</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> typing <span class="im">import</span> Callable</span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>ComplexToInt <span class="op">=</span> Callable[(<span class="bu">complex</span>,), <span class="bu">int</span>]</span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> dataclasses <span class="im">import</span> dataclass</span></code></pre></div>
+</div>
+<p>We will be computing the famous <a href="https://en.wikipedia.org/wiki/Mandelbrot_fractal">Mandelbrot fractal</a>. The Mandelbrot set is the set of complex numbers <span class="math inline">\(c \in \mathbb{C}\)</span> for which the iteration,</p>
+<p><span class="math display">\[z_{n+1} = z_n^2 + c,\]</span></p>
+<p>converges, starting iteration at <span class="math inline">\(z_0 = 0\)</span>. We can visualize the Mandelbrot set by plotting the number of iterations needed for the absolute value <span class="math inline">\(|z_n|\)</span> to exceed 2 (for which it can be shown that the iteration always diverges).</p>
+<p>We may compute the Mandelbrot as follows.</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>max_iter <span class="op">=</span> <span class="dv">256</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>width <span class="op">=</span> <span class="dv">256</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>height <span class="op">=</span> <span class="dv">256</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>center <span class="op">=</span> <span class="op">-</span><span class="fl">0.8</span><span class="op">+</span><span class="ot">0.0j</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>extent <span class="op">=</span> <span class="fl">3.0</span><span class="op">+</span><span class="ot">3.0j</span></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>scale <span class="op">=</span> <span class="bu">max</span>((extent <span class="op">/</span> width).real, (extent <span class="op">/</span> height).imag)</span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>result <span class="op">=</span> np.zeros((height, width), <span class="bu">int</span>)</span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> j <span class="kw">in</span> <span class="bu">range</span>(height):</span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> i <span class="kw">in</span> <span class="bu">range</span>(width):</span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a>        c <span class="op">=</span> center <span class="op">+</span> (i <span class="op">-</span> width <span class="op">//</span> <span class="dv">2</span> <span class="op">+</span> (j <span class="op">-</span> height <span class="op">//</span> <span class="dv">2</span>)<span class="op">*</span><span class="ot">1j</span>) <span class="op">*</span> scale</span>
+<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a>        z <span class="op">=</span> <span class="dv">0</span></span>
+<span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a>        <span class="cf">for</span> k <span class="kw">in</span> <span class="bu">range</span>(max_iter):</span>
+<span id="cb2-14"><a href="#cb2-14" aria-hidden="true" tabindex="-1"></a>            z <span class="op">=</span> z<span class="op">**</span><span class="dv">2</span> <span class="op">+</span> c</span>
+<span id="cb2-15"><a href="#cb2-15" aria-hidden="true" tabindex="-1"></a>            <span class="cf">if</span> (z <span class="op">*</span> z.conjugate()).real <span class="op">&gt;</span> <span class="fl">4.0</span>:</span>
+<span id="cb2-16"><a href="#cb2-16" aria-hidden="true" tabindex="-1"></a>                <span class="cf">break</span></span>
+<span id="cb2-17"><a href="#cb2-17" aria-hidden="true" tabindex="-1"></a>        result[j, i] <span class="op">=</span> k</span></code></pre></div>
+<p>Then we can plot with the following code:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>fig, ax <span class="op">=</span> plt.subplots(<span class="dv">1</span>, <span class="dv">1</span>, figsize<span class="op">=</span>(<span class="dv">10</span>, <span class="dv">10</span>))</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>plot_extent <span class="op">=</span> (width <span class="op">+</span> <span class="ot">1j</span> <span class="op">*</span> height) <span class="op">*</span> scale</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>z1 <span class="op">=</span> center <span class="op">-</span> plot_extent <span class="op">/</span> <span class="dv">2</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>z2 <span class="op">=</span> z1 <span class="op">+</span> plot_extent</span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>ax.imshow(result<span class="op">**</span>(<span class="dv">1</span><span class="op">/</span><span class="dv">3</span>), origin<span class="op">=</span><span class="st">&#39;lower&#39;</span>, extent<span class="op">=</span>(z1.real, z2.real, z1.imag, z2.imag))</span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>ax.set_xlabel(<span class="st">&quot;$\Re(c)$&quot;</span>)</span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>ax.set_ylabel(<span class="st">&quot;$\Im(c)$&quot;</span>)</span></code></pre></div>
+<p><img src="fig/mandelbrot-1.svg" title="The entire Mandelbrot set." class="figure" alt="The entire Mandelbrot set." /></p>
+<p>Things become really loads of fun when we start to zoom in. We can play around with the <code>center</code> and <code>extent</code> values (and necessarily <code>max_iter</code>) to control our window.</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>max_iter <span class="op">=</span> <span class="dv">1024</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>center <span class="op">=</span> <span class="op">-</span><span class="fl">1.1195</span><span class="op">+</span><span class="ot">0.2718j</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>extent <span class="op">=</span> <span class="fl">0.005</span><span class="op">+</span><span class="ot">0.005j</span></span></code></pre></div>
+<p>When we zoom in on the Mandelbrot fractal, we get smaller copies of the larger set!</p>
+<p><img src="fig/mandelbrot-2.svg" title="A zoom-in on the Mandelbrot set." class="figure" alt="A zoom-in on the Mandelbrot set." /></p>
+</section>
+<section id="exercise-1-modularize-this-code" class="level1">
+<h1>Exercise 1: modularize this code</h1>
+<p>This is not even the worst code. Variables are aptly named and the code is nicely parametrized. However, this code utterly lacks in modularity. The author has never heard of classes or functions! Try to improve this code to get less repetition and better isolation of concerns, while at the same time bundling things that belong together. To achieve this you should consider using functions to isolate functionality, while using classes to bundle things that are related.</p>
+<section id="create-a-boundingbox-class" class="level2">
+<h2>Create a <code>BoundingBox</code> class</h2>
+<p>One piece of information that we might want to bundle is the <code>BoundingBox</code> of the fractal. Then we can think about the actions that we perform on the bounding-box that are generic enough so that we may put them in the <code>BoundingBox</code> class as a method. We collect the information on the <code>width</code> and <code>height</code> of the resulting image, together with the <code>center</code> coordinate and the <code>extent</code> in terms of the complex number plane.</p>
+<div class="named-code-block">
+<p>«bounding-box»</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="at">@dataclass</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> BoundingBox:</span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>    width: <span class="bu">int</span></span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>    height: <span class="bu">int</span></span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>    center: <span class="bu">complex</span></span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>    extent: <span class="bu">complex</span></span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a>    <span class="op">&lt;&lt;</span>bounding<span class="op">-</span>box<span class="op">-</span>methods<span class="op">&gt;&gt;</span></span></code></pre></div>
+</div>
+<p>We will do some testing and benchmarking on the following box:</p>
+<div class="named-code-block">
+<p>«define-test-box»</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>box <span class="op">=</span> BoundingBox(<span class="dv">1024</span>, <span class="dv">1024</span>, <span class="op">-</span><span class="fl">1.1195</span><span class="op">+</span><span class="ot">0.2718j</span>, <span class="fl">0.005</span><span class="op">+</span><span class="ot">0.005j</span>)</span></code></pre></div>
+</div>
+<section id="mapping" class="level3">
+<h3>Mapping</h3>
+<p>In the initial code, we had the following loop structure:</p>
+<div class="named-code-block">
+<p>«mapping»</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>result <span class="op">=</span> np.zeros((height, width), <span class="bu">int</span>)</span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> j <span class="kw">in</span> <span class="bu">range</span>(height):</span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> i <span class="kw">in</span> <span class="bu">range</span>(width):</span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>        c <span class="op">=</span> center <span class="op">+</span> (i <span class="op">-</span> width <span class="op">//</span> <span class="dv">2</span> <span class="op">+</span> (j <span class="op">-</span> height <span class="op">//</span> <span class="dv">2</span>)<span class="op">*</span><span class="ot">1j</span>) <span class="op">*</span> scale</span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>        <span class="op">&lt;&lt;</span>compute<span class="op">-</span>k<span class="op">&gt;&gt;</span></span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a>        result[j, i] <span class="op">=</span> k</span></code></pre></div>
+</div>
+<p>Then for <code>&lt;&lt;compute-k&gt;&gt;</code> we had the explicit computation of a pixel value for the Mandelbrot fractal. It would be much better if that is done through a generic method.</p>
+<div class="named-code-block">
+<p>«bounding-box-methods»</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> <span class="bu">map</span>(<span class="va">self</span>, f) <span class="op">-&gt;</span> np.array:</span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>    width <span class="op">=</span> <span class="va">self</span>.width</span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>    height <span class="op">=</span> <span class="va">self</span>.height</span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>    center <span class="op">=</span> <span class="va">self</span>.center</span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>    scale <span class="op">=</span> <span class="va">self</span>.scale</span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a>    <span class="op">&lt;&lt;</span>mapping<span class="op">&gt;&gt;</span></span>
+<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> result</span></code></pre></div>
+</div>
+<p>Now, for <code>&lt;&lt;compute-k&gt;&gt;</code> we have the very generic:</p>
+<div class="named-code-block">
+<p>«compute-k»</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>k <span class="op">=</span> f(c)</span></code></pre></div>
+</div>
+<p>Notice that I used the member <code>BoundingBox.scale</code>, which we haven’t defined yet:</p>
+<div class="named-code-block">
+<p>«bounding-box-methods»</p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="at">@property</span></span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> scale(<span class="va">self</span>) <span class="op">-&gt;</span> <span class="bu">float</span>:</span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="bu">max</span>(<span class="va">self</span>.extent.real <span class="op">/</span> <span class="va">self</span>.width,</span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>               <span class="va">self</span>.extent.imag <span class="op">/</span> <span class="va">self</span>.height)</span></code></pre></div>
+</div>
+</section>
+<section id="the-mandelbrot-iteration" class="level3">
+<h3>The Mandelbrot iteration</h3>
+<p>Now we need to put the inner-most loop in a separate function. From the first code we had the following:</p>
+<div class="named-code-block">
+<p>«compute-mandelbrot»</p>
+<div class="sourceCode" id="cb11"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>z <span class="op">=</span> <span class="dv">0</span></span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> k <span class="kw">in</span> <span class="bu">range</span>(max_iter):</span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>    z <span class="op">=</span> z<span class="op">**</span><span class="dv">2</span> <span class="op">+</span> c</span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> (z <span class="op">*</span> z.conjugate()).real <span class="op">&gt;</span> <span class="fl">4.0</span>:</span>
+<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a>        <span class="cf">break</span></span></code></pre></div>
+</div>
+<p>To create a function that takes a <code>complex</code> and returns an <code>int</code>, we need to capture the <code>max_iter</code> variable in some way. In one function, this would be something like:</p>
+<div class="sourceCode" id="cb12"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> mandelbrot(max_iter: <span class="bu">int</span>, c: <span class="bu">complex</span>) <span class="op">-&gt;</span> <span class="bu">int</span>:</span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>    <span class="op">&lt;&lt;</span>compute<span class="op">-</span>mandelbrot<span class="op">&gt;&gt;</span></span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> k</span></code></pre></div>
+<p>To create a function that only takes a single <code>complex</code> argument, we need to write a function that captures <code>max_iter</code> and returns a function of only <code>c</code>:</p>
+<div class="named-code-block">
+<p>«mandelbrot-iteration»</p>
+<div class="sourceCode" id="cb13"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> mandelbrot(max_iter: <span class="bu">int</span>):</span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> mandelbrot_iter(c: <span class="bu">complex</span>) <span class="op">-&gt;</span> <span class="bu">int</span>:</span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>        <span class="op">&lt;&lt;</span>compute<span class="op">-</span>mandelbrot<span class="op">&gt;&gt;</span></span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> k</span>
+<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> mandelbrot_iter</span></code></pre></div>
+</div>
+<p>This pattern is so common that it has a name: <strong>currying</strong>, after the famous mathematician Haskell Curry.</p>
+</section>
+<section id="write-a-plot-function" class="level3">
+<h3>Write a plot function</h3>
+<p>Now that we have a generic <code>BoundingBox</code> class, we can write a plotting function. We could make this a method of <code>BoundingBox</code>, but there is a good reason not to: again, <strong>modularity</strong>. Not everyone may like our plotting function, by having it separate from the class, we can swap out the plotting function for another one more easily.</p>
+<div class="named-code-block">
+<p>«plot-fractal»</p>
+<div class="sourceCode" id="cb14"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> plot_fractal(box: BoundingBox, result: np.array):</span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>    fig, ax <span class="op">=</span> plt.subplots(<span class="dv">1</span>, <span class="dv">1</span>, figsize<span class="op">=</span>(<span class="dv">10</span>, <span class="dv">10</span>))</span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>    plot_extent <span class="op">=</span> (box.width <span class="op">+</span> <span class="ot">1j</span> <span class="op">*</span> box.height) <span class="op">*</span> box.scale</span>
+<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a>    z1 <span class="op">=</span> box.center <span class="op">-</span> plot_extent <span class="op">/</span> <span class="dv">2</span></span>
+<span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a>    z2 <span class="op">=</span> z1 <span class="op">+</span> plot_extent</span>
+<span id="cb14-6"><a href="#cb14-6" aria-hidden="true" tabindex="-1"></a>    ax.imshow(result<span class="op">**</span>(<span class="dv">1</span><span class="op">/</span><span class="dv">3</span>), origin<span class="op">=</span><span class="st">&#39;lower&#39;</span>, extent<span class="op">=</span>(z1.real, z2.real, z1.imag, z2.imag))</span>
+<span id="cb14-7"><a href="#cb14-7" aria-hidden="true" tabindex="-1"></a>    ax.set_xlabel(<span class="st">&quot;$\Re(c)$&quot;</span>)</span>
+<span id="cb14-8"><a href="#cb14-8" aria-hidden="true" tabindex="-1"></a>    ax.set_ylabel(<span class="st">&quot;$\Im(c)$&quot;</span>)</span>
+<span id="cb14-9"><a href="#cb14-9" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> fig, ax</span></code></pre></div>
+</div>
+<p>Choosing wether to bundle things into a class or keep them separate is sometimes a hard choice. Don’t worry about getting it right from the get go.</p>
+</section>
+<section id="conclusion" class="level3">
+<h3>Conclusion</h3>
+<p>What have we gained by refactoring our code like this? We now have separated the outer-loop structure from inner-loop functionality. We can now do several things:</p>
+<ul>
+<li>optimize the different components</li>
+<li>swap out the mapping function for a parallel version</li>
+<li>swap out the function to compute a different fractal</li>
+</ul>
+<p>As an added bonus: our code has become <strong>more readable</strong> and thus <strong>better maintainable</strong>.</p>
+</section>
+</section>
+</section>
+<section id="exercise-2-optimise-using-numba" class="level1">
+<h1>Exercise 2: optimise using Numba</h1>
+<p>The code we have is terribly slow. We can make it faster by optimizing with Numba. It is often a good idea to start optimization with the inner-most loop.</p>
+<div class="named-code-block">
+<p>«using-vectorize»</p>
+<div class="sourceCode" id="cb15"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a>mandelbrot_vectorized <span class="op">=</span> numba.vectorize()(mandelbrot(<span class="dv">1024</span>))</span></code></pre></div>
+</div>
+<p>By using the <code>vectorize</code> decorator, we immediately have the nice functionality that we can call this function with <code>numpy</code> arrays and everything works as expected. We actually don’t need the mapping function now:</p>
+<div class="named-code-block">
+<p>«using-vectorize»</p>
+<div class="sourceCode" id="cb16"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a>benchmark(<span class="st">&quot;vectorized&quot;</span>, <span class="kw">lambda</span>: mandelbrot_vectorized(box.grid()))</span></code></pre></div>
+</div>
+<p>Here, the <code>grid</code> method returns a 2-dimensional array of complex values that give the values of the complex plane for each pixel in the bounding box.</p>
+<div class="named-code-block">
+<p>«bounding-box-methods»</p>
+<div class="sourceCode" id="cb17"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> grid(<span class="va">self</span>) <span class="op">-&gt;</span> np.array:</span>
+<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a>    x0 <span class="op">=</span> <span class="va">self</span>.center <span class="op">-</span> <span class="va">self</span>.extent <span class="op">/</span> <span class="dv">2</span></span>
+<span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a>    x1 <span class="op">=</span> <span class="va">self</span>.center <span class="op">+</span> <span class="va">self</span>.extent <span class="op">/</span> <span class="dv">2</span></span>
+<span id="cb17-4"><a href="#cb17-4" aria-hidden="true" tabindex="-1"></a>    g <span class="op">=</span> np.indices([<span class="va">self</span>.height, <span class="va">self</span>.width])</span>
+<span id="cb17-5"><a href="#cb17-5" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="va">self</span>.center <span class="op">+</span> (g[<span class="dv">1</span>] <span class="op">-</span> <span class="va">self</span>.width <span class="op">//</span> <span class="dv">2</span> <span class="op">+</span> (g[<span class="dv">0</span>] <span class="op">-</span> <span class="va">self</span>.height <span class="op">//</span> <span class="dv">2</span>)<span class="op">*</span><span class="ot">1j</span>) <span class="op">\</span></span>
+<span id="cb17-6"><a href="#cb17-6" aria-hidden="true" tabindex="-1"></a>                       <span class="op">*</span> <span class="va">self</span>.scale</span></code></pre></div>
+</div>
+<section id="optimise-the-outer-loop" class="level2">
+<h2>Optimise the outer loop</h2>
+<p>We have no optimized the inner loop. We could also optimise the outer loop using numba. Since we want to create a function that does not live in the GIL, it cannot be a class method: all arguments must be primitive types. The advantages of doing this over using Numpy are:</p>
+<ul>
+<li>The entire computation now lives outside the GIL</li>
+<li>We save a bit of memory</li>
+</ul>
+<p>The downside is: we need to specialize for mapping complex to integer functions.</p>
+<div class="named-code-block">
+<p>«numba-int-map»</p>
+<div class="sourceCode" id="cb18"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="at">@numba.jit</span>(nopython<span class="op">=</span><span class="va">True</span>, nogil<span class="op">=</span><span class="va">True</span>)</span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> _int_map(f: ComplexToInt, width: <span class="bu">int</span>, height: <span class="bu">int</span>, center: <span class="bu">complex</span>, scale: <span class="bu">complex</span>):</span>
+<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a>    result <span class="op">=</span> np.zeros((height, width), np.int64)</span>
+<span id="cb18-4"><a href="#cb18-4" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> j <span class="kw">in</span> <span class="bu">range</span>(height):</span>
+<span id="cb18-5"><a href="#cb18-5" aria-hidden="true" tabindex="-1"></a>        <span class="cf">for</span> i <span class="kw">in</span> <span class="bu">range</span>(width):</span>
+<span id="cb18-6"><a href="#cb18-6" aria-hidden="true" tabindex="-1"></a>            z <span class="op">=</span> center <span class="op">+</span> (i <span class="op">-</span> width <span class="op">//</span> <span class="dv">2</span> <span class="op">+</span> (j <span class="op">-</span> height <span class="op">//</span> <span class="dv">2</span>) <span class="op">*</span> <span class="ot">1j</span>) <span class="op">*</span> scale</span>
+<span id="cb18-7"><a href="#cb18-7" aria-hidden="true" tabindex="-1"></a>            result[j, i] <span class="op">=</span> f(z)</span>
+<span id="cb18-8"><a href="#cb18-8" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> result</span></code></pre></div>
+</div>
+<div class="named-code-block">
+<p>«bounding-box-methods»</p>
+<div class="sourceCode" id="cb19"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> map_numba(<span class="va">self</span>, f) <span class="op">-&gt;</span> np.array:</span>
+<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> _int_map(f, <span class="va">self</span>.width, <span class="va">self</span>.height, <span class="va">self</span>.center, <span class="va">self</span>.scale)</span></code></pre></div>
+</div>
+<p>We’ll be benchmarking all our solutions (except the native Python one):</p>
+<div class="named-code-block">
+<p>«using-numba»</p>
+<div class="sourceCode" id="cb20"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a>mb <span class="op">=</span> numba.njit(nogil<span class="op">=</span><span class="va">True</span>)(mandelbrot(<span class="dv">1024</span>))</span>
+<span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a>mb(<span class="dv">0</span>)    <span class="co"># run once to compile</span></span>
+<span id="cb20-3"><a href="#cb20-3" aria-hidden="true" tabindex="-1"></a>benchmark(<span class="st">&quot;numba-single&quot;</span>, <span class="kw">lambda</span>: box.map_numba(mb))</span></code></pre></div>
+</div>
+</section>
+</section>
+<section id="exercise-3-parallelize" class="level1">
+<h1>Exercise 3: parallelize</h1>
+<p>For further speed-up, we need to run our fractal renderer in parallel. Since we already have a vectorised function, we can try to plug a <code>dask.array</code> directly in, and see if we can get any faster.</p>
+<div class="named-code-block">
+<p>«using-dask-array»</p>
+<div class="sourceCode" id="cb21"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a>mb <span class="op">=</span> numba.vectorize([numba.int64(numba.complex128)])(mandelbrot(<span class="dv">1024</span>))</span>
+<span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a>mb(<span class="dv">0</span>)    <span class="co"># run once to compile</span></span>
+<span id="cb21-3"><a href="#cb21-3" aria-hidden="true" tabindex="-1"></a>benchmark(<span class="st">&quot;dask-array&quot;</span>, <span class="kw">lambda</span>: mb(da.from_array(box.grid(), chunks<span class="op">=</span>(<span class="dv">128</span>, <span class="dv">128</span>))).compute())</span></code></pre></div>
+</div>
+<section id="domain-splitting" class="level2">
+<h2>Domain splitting</h2>
+<p>We could do better by splitting our domain manually and using the <code>map_numba</code> method to do the mapping, then <code>numpy.block</code> to rejoin each part. The following method splits the domain into <code>n x n</code> subdomains, returing a nested list of <code>BoundingBox</code> objects.</p>
+<div class="named-code-block">
+<p>«bounding-box-methods»</p>
+<div class="sourceCode" id="cb22"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> split(<span class="va">self</span>, n):</span>
+<span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a>    sd <span class="op">=</span> <span class="va">self</span>.extent <span class="op">/</span> n</span>
+<span id="cb22-3"><a href="#cb22-3" aria-hidden="true" tabindex="-1"></a>    x0 <span class="op">=</span> <span class="va">self</span>.center <span class="op">-</span> <span class="va">self</span>.extent <span class="op">/</span> <span class="dv">2</span> <span class="op">+</span> sd <span class="op">/</span> <span class="dv">2</span></span>
+<span id="cb22-4"><a href="#cb22-4" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> [[BoundingBox(width<span class="op">=</span><span class="va">self</span>.width<span class="op">//</span>n, height<span class="op">=</span><span class="va">self</span>.height<span class="op">//</span>n,</span>
+<span id="cb22-5"><a href="#cb22-5" aria-hidden="true" tabindex="-1"></a>                         center<span class="op">=</span>x0 <span class="op">+</span> i <span class="op">*</span> sd.real <span class="op">+</span> j <span class="op">*</span> sd.imag <span class="op">*</span> <span class="ot">1j</span>,</span>
+<span id="cb22-6"><a href="#cb22-6" aria-hidden="true" tabindex="-1"></a>                         extent<span class="op">=</span>sd) <span class="cf">for</span> i <span class="kw">in</span> <span class="bu">range</span>(n)]</span>
+<span id="cb22-7"><a href="#cb22-7" aria-hidden="true" tabindex="-1"></a>            <span class="cf">for</span> j <span class="kw">in</span> <span class="bu">range</span>(n)]</span></code></pre></div>
+</div>
+<p>We can now chunk the domain, and build a workflow using the <code>dask.delayed</code> interface. One function that I keep defining for its infinite usefulness is <code>gather</code>: it converts a list of promises into promise of a list.</p>
+<div class="named-code-block">
+<p>«gather»</p>
+<div class="sourceCode" id="cb23"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a><span class="at">@delayed</span></span>
+<span id="cb23-2"><a href="#cb23-2" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> gather(<span class="op">*</span>args):</span>
+<span id="cb23-3"><a href="#cb23-3" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="bu">list</span>(args)</span></code></pre></div>
+</div>
+<p>We add a benchmark to the list:</p>
+<div class="named-code-block">
+<p>«using-manual-splitting»</p>
+<div class="sourceCode" id="cb24"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a><span class="op">&lt;&lt;</span>gather<span class="op">&gt;&gt;</span></span>
+<span id="cb24-2"><a href="#cb24-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb24-3"><a href="#cb24-3" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> split_domain_map(box, f, n<span class="op">=</span><span class="dv">8</span>, num_workers<span class="op">=</span><span class="va">None</span>):</span>
+<span id="cb24-4"><a href="#cb24-4" aria-hidden="true" tabindex="-1"></a>    wf <span class="op">=</span> gather(<span class="op">*</span>[gather(<span class="op">*</span>[delayed(sub_domain.map_numba)(f)</span>
+<span id="cb24-5"><a href="#cb24-5" aria-hidden="true" tabindex="-1"></a>                           <span class="cf">for</span> sub_domain <span class="kw">in</span> row])</span>
+<span id="cb24-6"><a href="#cb24-6" aria-hidden="true" tabindex="-1"></a>                  <span class="cf">for</span> row <span class="kw">in</span> box.split(n)])</span>
+<span id="cb24-7"><a href="#cb24-7" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> np.block(wf.compute(num_workers<span class="op">=</span>num_workers))</span>
+<span id="cb24-8"><a href="#cb24-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb24-9"><a href="#cb24-9" aria-hidden="true" tabindex="-1"></a>mb <span class="op">=</span> numba.njit(nogil<span class="op">=</span><span class="va">True</span>)(mandelbrot(<span class="dv">1024</span>))</span>
+<span id="cb24-10"><a href="#cb24-10" aria-hidden="true" tabindex="-1"></a>mb(<span class="dv">0</span>)    <span class="co"># run once to compile</span></span>
+<span id="cb24-11"><a href="#cb24-11" aria-hidden="true" tabindex="-1"></a>benchmark(<span class="st">&quot;manual-splitting&quot;</span>, <span class="kw">lambda</span>: split_domain_map(box, mb))</span></code></pre></div>
+</div>
+<p>Visualizing this workflow:</p>
+<p><img src="fig/domain-splitting-dag.svg" class="figure" alt="" /></p>
+<p>That was a bit of extra work compared to using <code>vectorize</code> and <code>dask.array</code>. Let’s see if it pays off.</p>
+</section>
+</section>
+<section id="benchmark-results" class="level1">
+<h1>Benchmark results</h1>
+<p>Considering the amount of work needed to implement the <code>dask.array</code> version, it parallelizes rather well. It is no match however for our hand coded domain splitting solution. For the following results, we ran the above codes on subdomains of 8x8 tiles (so 128x128 each). The hand coded solution runs nearly ten times faster on an 8-core Intel machine, and twice as fast as the <code>dask.array</code> version.</p>
+<p><img src="fig/benchmark.svg" class="figure" alt="" /></p>
+</section>
+<section id="bonus-julia-sets" class="level1">
+<h1>Bonus: Julia sets</h1>
+<p>For each value <span class="math inline">\(c\)</span> we can compute the Julia set, namely the set of starting values <span class="math inline">\(z_1\)</span> for which the iteration over <span class="math inline">\(z_{n+1}=z_n^2 + c\)</span> converges. Every location on the Mandelbrot image corresponds to its own unique Julia set.</p>
+<div class="sourceCode" id="cb25"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a>max_iter <span class="op">=</span> <span class="dv">256</span></span>
+<span id="cb25-2"><a href="#cb25-2" aria-hidden="true" tabindex="-1"></a>center <span class="op">=</span> <span class="fl">0.0</span><span class="op">+</span><span class="ot">0.0j</span></span>
+<span id="cb25-3"><a href="#cb25-3" aria-hidden="true" tabindex="-1"></a>extent <span class="op">=</span> <span class="fl">4.0</span><span class="op">+</span><span class="ot">3.0j</span></span>
+<span id="cb25-4"><a href="#cb25-4" aria-hidden="true" tabindex="-1"></a>scale <span class="op">=</span> <span class="bu">max</span>((extent <span class="op">/</span> width).real, (extent <span class="op">/</span> height).imag)</span>
+<span id="cb25-5"><a href="#cb25-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb25-6"><a href="#cb25-6" aria-hidden="true" tabindex="-1"></a>result <span class="op">=</span> np.zeros((height, width), <span class="bu">int</span>)</span>
+<span id="cb25-7"><a href="#cb25-7" aria-hidden="true" tabindex="-1"></a>c <span class="op">=</span> <span class="op">-</span><span class="fl">1.1193</span><span class="op">+</span><span class="ot">0.2718j</span></span>
+<span id="cb25-8"><a href="#cb25-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb25-9"><a href="#cb25-9" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> j <span class="kw">in</span> <span class="bu">range</span>(height):</span>
+<span id="cb25-10"><a href="#cb25-10" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> i <span class="kw">in</span> <span class="bu">range</span>(width):</span>
+<span id="cb25-11"><a href="#cb25-11" aria-hidden="true" tabindex="-1"></a>        z <span class="op">=</span> center <span class="op">+</span> (i <span class="op">-</span> width <span class="op">//</span> <span class="dv">2</span> <span class="op">+</span> (j <span class="op">-</span> height <span class="op">//</span> <span class="dv">2</span>)<span class="op">*</span><span class="ot">1j</span>) <span class="op">*</span> scale</span>
+<span id="cb25-12"><a href="#cb25-12" aria-hidden="true" tabindex="-1"></a>        <span class="cf">for</span> k <span class="kw">in</span> <span class="bu">range</span>(max_iter):</span>
+<span id="cb25-13"><a href="#cb25-13" aria-hidden="true" tabindex="-1"></a>            z <span class="op">=</span> z<span class="op">**</span><span class="dv">2</span> <span class="op">+</span> c</span>
+<span id="cb25-14"><a href="#cb25-14" aria-hidden="true" tabindex="-1"></a>            <span class="cf">if</span> (z <span class="op">*</span> z.conjugate()).real <span class="op">&gt;</span> <span class="fl">4.0</span>:</span>
+<span id="cb25-15"><a href="#cb25-15" aria-hidden="true" tabindex="-1"></a>                <span class="cf">break</span></span>
+<span id="cb25-16"><a href="#cb25-16" aria-hidden="true" tabindex="-1"></a>        result[j, i] <span class="op">=</span> k</span></code></pre></div>
+<p>If we take the center of the last image, we get the following rendering of the Julia set:</p>
+<p><img src="fig/julia-1.svg" title="The Julia set belonging to the point c=." class="figure" alt="The Julia set belonging to the point c=." /></p>
+<p>It is not too hard to adapt the above code for the Mandelbrot fractal to the Julia fractal.</p>
+</section>
+        </div>
+         <div class="col-3 col-s-3 menu" id="menu-container">
+                <div id="menu"><nav id="TOC" role="doc-toc">
+                                <h2 id="toc-title">Contents</h2>
+                                <ul>
+                                <li><a href="#exercise-in-modular-programming-the-mandelbrot-set">Exercise in modular programming: the Mandelbrot set</a></li>
+                                <li><a href="#exercise-1-modularize-this-code">Exercise 1: modularize this code</a>
+                                <ul>
+                                <li><a href="#create-a-boundingbox-class">Create a <code>BoundingBox</code> class</a></li>
+                                </ul></li>
+                                <li><a href="#exercise-2-optimise-using-numba">Exercise 2: optimise using Numba</a>
+                                <ul>
+                                <li><a href="#optimise-the-outer-loop">Optimise the outer loop</a></li>
+                                </ul></li>
+                                <li><a href="#exercise-3-parallelize">Exercise 3: parallelize</a>
+                                <ul>
+                                <li><a href="#domain-splitting">Domain splitting</a></li>
+                                </ul></li>
+                                <li><a href="#benchmark-results">Benchmark results</a></li>
+                                <li><a href="#bonus-julia-sets">Bonus: Julia sets</a></li>
+                                </ul>
+                </nav></div>
+        </div> 
+</div>
+<div class="footer">
+</div>
+</body>
+</html>

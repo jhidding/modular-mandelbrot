@@ -6,12 +6,15 @@ authors = ["Johan Hidding <j.hidding@esciencecenter.nl>"]
 license = "Apache 2"
 
 [tool.poetry.dependencies]
-python = "3.9"
+python = ">=3.9,<3.10"
 matplotlib = "^3.4.3"
-numba = "^0.54.0"
+numba = ">=0.54.0"
 jupyterlab = "^3"
 ipywidgets = "^7.6.5"
 ipympl = "^0.8.0"
+dask = {extras = ["complete"], version = "^2021.12.0"}
+graphviz = "^0.19.1"
+argh = "^0.26.2"
 
 [tool.poetry.dev-dependencies]
 
