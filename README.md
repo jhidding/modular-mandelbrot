@@ -393,7 +393,7 @@ def main(benchmarks, output):
     df = pd.read_csv(benchmarks).iloc[::-1]
     df = df.assign(terr_min = df["mean"]-df.best) \
            .assign(terr_max = df.worst-df["mean"])
-    fig, ax = plt.subplots(figsize=(10, 5))
+    fig, ax = plt.subplots(figsize=(6, 4))
     ax.barh(y="name", width="mean", xerr=df[["terr_min", "terr_max"]].T.values, data=df)
     ax.set_xlabel("runtime (s)")
     fig.savefig(output)

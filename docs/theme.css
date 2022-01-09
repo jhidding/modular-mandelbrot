@@ -21,7 +21,7 @@ h1, h2, h3 {
 }
 
 img.figure {
-        width: 80%;
+        width: 90%;
 }
 
 /*
@@ -183,6 +183,11 @@ code {
         top: 0;
   }
 
+  header h1 {
+          font-size: 30pt;
+          text-shadow: 0 0 1pt black;
+  }
+
   .row {
           display: flex;
           flex-flow: row;
@@ -206,7 +211,7 @@ code {
 }
 
 @media only screen and (min-width: 1600px) {
-header {
+/* header {
         padding: 10pt 100pt 10pt 50pt;
         text-shadow: 0 0 5pt black;
 }
@@ -229,7 +234,7 @@ header .author {
         background: #00000080;
         padding: 20pt;
         margin-top: 0;
-}
+} */
 
 .warning blockquote {
         padding: 5pt 20pt 5pt 20pt;
